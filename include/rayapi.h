@@ -4,12 +4,9 @@
 #include "context.h"
 extern struct Context ctx;
 // General macros
-#define MAX(n, m) ((n) > (m) ? (n) : (m))
 #define MIN(n, m) ((n) < (m) ? (n) : (m)) 
 #define FLAG(flags, flag) (((flags) & (flag)) == (flag))
 #define SI_OPT static inline
-#define BETWEENSS(min, x, max) ((min) <= (x) && (x) <= (max))
-#define BETWEEN(min, x, max) ((min) < (x) && (x) < (max))
 #define for_betweenss(min, i, max) for (int i = min; i <= max; ++i)
 // Lib needed
 #define mstrcpy(p1, p2) memcpy((p1), (p2), strlen(p2) + 1)
@@ -19,10 +16,15 @@ extern struct Context ctx;
 #define COUNT_SPECIAL_KEYS 93
 #define WORDS_DELIM ':'
 #define IN_VALUE_DELIM ';'
-#define FLOOR_PERC 1.0e-3f
+#define FLOOR_PERC 1.0e-5f
 #define BACK_COLOR (Color) {0x18, 0x18, 0x18, 0xFF}
 #define CAMERA_HEIGHT 0.8f
+#define CAMERA_DISTANCE 0.45f
 #define CONST_G 0.098f
+#define MOVING_SPEED 0.5f
+#define SPRINT_FACTOR 0.5f
+#define FRICTION_SCALE 0.99f
+#define ZERO_SPEED 1.0e-3f
 // Macros that use other macros
 #define is_alphanumeric_key(key) BETWEENSS(KEY_APOSTROPHE, (key), KEY_GRAVE)
 #define is_alphanumeric_key_or_space(key) (is_alphanumeric_key(key) || ((key) == KEY_SPACE))
@@ -61,12 +63,7 @@ void scan_struct_no_ptr(void* data, c_str_c fileName, int size);
 #define SCAN_STRUCT_NO_PTR(type, data, fileName) scan_struct_no_ptr((data), (fileName), sizeof(type))
 void save_struct_no_ptr(void* data, c_str_c fileName, int size);
 #define SAVE_STRUCT_NO_PTR(type, data, fileName) save_struct_no_ptr((data), (fileName), sizeof(type))
-/*
-int scan_v3(c_str_c s, Vector3* v);
-int save_v3(str_c result, Vector3 v); // assuming, that result - char[64]
-int scan_player(c_str_c s, Player* v);
-int save_player(str_c result, Player v); // assuming, that result - char[512]
-*/
+
 Vector3 pos_to_cpos(Vector3 pos, Vector3 size);
 Vector3 cpos_to_pos(Vector3 cpos, Vector3 size);
 
@@ -132,6 +129,7 @@ typedef struct Event {
 		ET_DOWN = (1 << 3),
 		ET_CLICK_OR_DOWN = ET_CLICK | ET_DOWN,
 		ET_ALWAYS = (1 << 4),
+		ET_CUSTOM = (1 << 5),
 	} ttype; // Trigger type
 	enum EventBType {
 		EB_NONE = 0,
@@ -153,6 +151,9 @@ typedef struct Event {
 	struct EventBEventData {
 		struct Event* event;
 	} bevent_data;
+	struct EventTriggerCustomData {
+		bool (*trigger)(struct Event* self);
+	} trigger_custom_data;
 	bool active;
 	bool (*on_action)(struct Event* self);
 } Event;

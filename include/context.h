@@ -2,6 +2,15 @@
 #include <raylib.h>
 #define Oy (Vector3) {0.0f, 1.0f, 0.0f}
 #define CAMERA_FOVY 120
+#define BETWEENSS(min, x, max) ((min) <= (x) && (x) <= (max))
+#define BETWEEN(min, x, max) ((min) < (x) && (x) < (max)), max) ((min) < (x) && (x) < (max))
+#define XOR(a, b) (((a) || (b)) && !((a) && (b)))
+#define MAX(n, m) ((n) > (m) ? (n) : (m))
+#define MAXSQ(n, m) MAX(n*n, m*m)
+#define MAX3(a, b, c) ((a) > (b) ? MAX(a, c) : MAX(b, c))
+#define MIN(n, m) ((n) < (m) ? (n) : (m))
+#define MIN3(a, b, c) ((a) < (b) ? MIN(a, c) : MIN(a, c))
+#define MINSQ(n, m) MIN(n*n, m*m)
 // Map between name of keybind, and corresponding raylib key
 typedef struct Keybind {
 	int key;
@@ -43,4 +52,5 @@ struct Context {
 	ObjectBind *ob_context;
 	int obs_count;
 	Vars *keybinds_v, *objects_v;
+	int staying_on_name;
 };

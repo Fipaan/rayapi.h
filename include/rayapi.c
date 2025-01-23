@@ -402,7 +402,7 @@ const char* rkey_to_skey(int rkey, str_c buf) {
 	} else if (is_special_key_no_space(rkey)) {
 		mstrcpy(buf, get_special_key(rkey));
 	} else {
-		mstrcpy(buf, "UNDEFINED");
+		mstrcpy(buf, "UNDEF");
 	}
 	return buf;
 }
@@ -424,6 +424,9 @@ int skey_to_rkey(c_str_c skey) {
 		if(strncmp(get_special_key(key), skey, len) == 0) return key;
 	}
 	for_betweenss(KEY_LEFT_SHIFT, key, KEY_KB_MENU) {
+		if(strncmp(get_special_key(key), skey, len) == 0) return key;
+	}
+	for_betweenss(KEY_KP_0, key, KEY_KP_EQUAL) {
 		if(strncmp(get_special_key(key), skey, len) == 0) return key;
 	}
 	return -1;
@@ -504,29 +507,43 @@ void mov_by_index(Name index, Vector3 moving_vector, int count) {
 
 bool is_falling(Name name) {
 	Vector3 pos = ctx.ob_context[name].cb.pos;
+	Vector3 size = ctx.ob_context[name].cb.size;
+	Vector3 cpos = pos_to_cpos(pos, size);
 	for(int i = 0; i < ctx.obs_count; ++i) {
 		if(name == i) continue;
 		Vector3 ipos = ctx.ob_context[i].cb.pos;
 		Vector3 isize = ctx.ob_context[i].cb.size;
+		Vector3 dpos = Vector3Subtract(pos_to_cpos(ipos, isize), cpos);
 		if(BETWEENSS(ipos.y + isize.y, pos.y, ipos.y + isize.y + FLOOR_PERC) &&
-		   BETWEENSS(ipos.x, pos.x, ipos.x + isize.x) &&
-		   BETWEENSS(ipos.z, pos.z, ipos.z + isize.z)
-		) return false;
+		   dpos.x * dpos.x <= (isize.x + size.x) * (isize.x + size.x) * 0.25f &&
+		   dpos.z * dpos.z <= (isize.x + size.x) * (isize.x + size.x) * 0.25f
+		) {
+			ctx.staying_on_name = i;
+			return false;
+		}
 	}
+	ctx.staying_on_name = -1;
 	return true;
 }
 
 float get_falling_floor(Name name) {
 	Vector3 pos = ctx.ob_context[name].cb.pos;
+	Vector3 size = ctx.ob_context[name].cb.size;
+	Vector3 cpos = pos_to_cpos(pos, size);
 	for(int i = 0; i < ctx.obs_count; ++i) {
 		if(name == i) continue;
 		Vector3 ipos = ctx.ob_context[i].cb.pos;
 		Vector3 isize = ctx.ob_context[i].cb.size;
+		Vector3 dpos = Vector3Subtract(pos_to_cpos(ipos, isize), cpos);
 		if(BETWEENSS(ipos.y + isize.y, pos.y, ipos.y + isize.y + FLOOR_PERC) &&
-		   BETWEENSS(ipos.x, pos.x, ipos.x + isize.x) &&
-		   BETWEENSS(ipos.z, pos.z, ipos.z + isize.z)
-		) return ipos.y + isize.y;
+		   dpos.x * dpos.x <= (isize.x + size.x) * (isize.x + size.x) * 0.25f &&
+		   dpos.z * dpos.z <= (isize.x + size.x) * (isize.x + size.x) * 0.25f
+		) {
+			ctx.staying_on_name = i;
+			return ipos.y + isize.y;
+		}
 	}
+	ctx.staying_on_name = -1;
 	return pos.y;
 }
 
@@ -594,7 +611,7 @@ bool activate_event(Event* event) {
 	if(FLAG(event->btype, ET_ALWAYS)) goto on_action_true_sec;
 	if(FLAG(event->btype, EB_COOLDOWN)) {
 		if(event->cooldown_data.ellapsed_time > 0.0f) {
-			event->cooldown_data.cooldown_time += GetFrameTime();
+			event->cooldown_data.ellapsed_time += GetFrameTime();
 			if(event->cooldown_data.ellapsed_time >= event->cooldown_data.cooldown_time) {
 				event->cooldown_data.ellapsed_time = 0.0f;
 				if(event->cooldown_data.on_cooldown) event->cooldown_data.on_cooldown(event);
@@ -617,12 +634,15 @@ bool activate_event(Event* event) {
 	} else if(FLAG(event->ttype, ET_DOWN)) {
 		if(!IsKeybindDown(event->key_data.name)) goto on_action_false_sec;
 	}
+	if(FLAG(event->ttype, ET_CUSTOM) && !event->trigger_custom_data.trigger(event)) goto on_action_false_sec;
 on_action_true_sec:
 	if(!event->on_action(event)) goto on_action_false_sec;
-	if(FLAG(event->btype, EB_COOLDOWN)) event->cooldown_data.cooldown_time += GetFrameTime();
+	if(FLAG(event->btype, EB_COOLDOWN)) event->cooldown_data.ellapsed_time += GetFrameTime();
 	else if(FLAG(event->btype, EB_EVENT_SUCCESS)) return activate_event(event->bevent_data.event);
 	return true;
 on_action_false_sec:
-	if(FLAG(event->btype, EB_EVENT_FAIL)) return activate_event(event->bevent_data.event);
+	if(FLAG(event->btype, EB_EVENT_FAIL)) {
+		return activate_event(event->bevent_data.event);
+	}
 	return false;
 }

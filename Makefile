@@ -4,7 +4,9 @@ CFLAGS=-Wall -Wextra -Wno-unused-label -ggdb -std=c11 $(OPT)
 INCLUDES=-I./include
 LIBS=-L./lib/ -lraylib -lm
 
-game: librayapi.a
+all: game librayapi.a
+
+game:
 	$(CC) $(CFLAGS) $(INCLUDES) -o game ./src/game.c -lrayapi $(LIBS)
 
 librayapi.a:
