@@ -1,15 +1,22 @@
-CC=cc
+CC=gcc
 OPT=-O3
-CFLAGS=-Wall -Wextra -Wno-unused-label -ggdb -std=c11 $(OPT)
+EXTRA_INDENT=$(if $(EXTRA), " ")
+CFLAGS=-Wall -Wextra -pedantic -Wno-unused-label -ggdb -std=c11 $(OPT)$(EXTRA_INDENT)$(EXTRA)
 INCLUDES=-I./include
 LIBS=-L./lib/ -lraylib -lm
 
-all: game librayapi.a
+all: game examples
 
 game:
-	$(CC) $(CFLAGS) $(INCLUDES) -o game ./src/game.c -lrayapi $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o game ./src/game.c $(LIBS)
 
-librayapi.a:
-	$(CC) $(CFLAGS) $(INCLUDES) -c include/rayapi.c -o rayapi.o $(LIBS)
-	ar rcs lib/librayapi.a rayapi.o
-	rm rayapi.o
+examples: examples/split examples/vars examples/objects
+
+examples/split: examples/split.c include/rayapi.h
+	$(CC) $(CFLAGS) $(INCLUDES) -o examples/split examples/split.c $(LIBS)
+
+examples/vars: examples/vars.c include/rayapi.h
+	$(CC) $(CFLAGS) $(INCLUDES) -o examples/vars examples/vars.c -D__SRC_LOC__="\"./examples/\"" $(LIBS)
+
+examples/basic_shapes: examples/basic_shapes.c include/rayapi.h
+	$(CC) $(CFLAGS) $(INCLUDES) -o examples/basic_shapes examples/basic_shapes.c $(LIBS)

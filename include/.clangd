@@ -1,0 +1,6 @@
+CompileFlags:
+  Add: [-DRAYF_IMPLEMENTATION, -Wall, -Wextra]
+
+#Diagnostics:
+#  Suppress:
+#    - "clang-diagnostic-error" # You can suppress all error diagnostics

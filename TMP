@@ -1,0 +1,23 @@
+/*
+
+// returns success of operation
+bool remove_key_by_index(RayF_Vars* vars, int index) {
+	if(index >= vars->count_lines) return false;
+	RAYF_FREE(vars->lines[index]);
+	for(int i = index; i < vars->count_lines - 1; ++i) {
+		vars->lines[i] = vars->lines[i + 1];
+	}
+	vars->lines[vars->count_lines - 1] = NULL;
+	vars->lines = RAYF_REALLOC(vars->lines, (--vars->count_lines) * sizeof(char*));
+	return true;
+}
+*/
+	RayF_Object *object = allocator(sizeof(RayF_Object));
+	*object = (RayF_Object) {
+		.like = RAYF_O?,
+		.as.? = allocator(sizeof(?)),
+	};
+	RAYF_OBJECT_LINK(object, ?);
+	*object->as.? = (?) {
+	};
+	return object;
